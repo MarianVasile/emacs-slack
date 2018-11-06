@@ -44,6 +44,8 @@
   "https://slack.com/api/conversations.members")
 (defconst slack-conversations-kick-url
   "https://slack.com/api/conversations.kick")
+(defconst slack-conversations-list-url
+  "https://slack.com/api/conversations.list")
 
 (cl-defun slack-conversations-success-handler (team &key on-errors on-success)
   (cl-function
@@ -273,6 +275,54 @@
         :params (list (cons "channel" channel)
                       (cons "user" user))
         :success (slack-conversations-success-handler team))))))
+
+
+(defun slack-conversations-list (team success-callback &optional types)
+  (let ((cursor nil)
+        (channels nil)
+        (groups nil)
+        (ims nil)
+        (types (or types (list "public_channel"
+                               "private_channel"
+                               "mpim"
+                               "im"))))
+    (cl-labels
+        ((on-success
+          (&key data &allow-other-keys)
+          (slack-request-handle-error
+           (data "slack-conversations-list")
+           (cl-loop for c in (plist-get data :channels)
+                    do (cond
+                        ((eq t (plist-get c :is_channel))
+                         (push (slack-room-create c team
+                                                  'slack-channel)
+                               channels))
+                        ((eq t (plist-get c :is_im))
+                         (push (slack-room-create c team
+                                                  'slack-im)
+                               ims))
+                        ((eq t (plist-get c :is_group))
+                         (push (slack-room-create c team
+                                                  'slack-group)
+                               groups))))
+           (slack-if-let*
+               ((meta (plist-get data :response_metadata))
+                (next-cursor (plist-get meta :next_cursor))
+                (has-cursor (< 0 (length next-cursor))))
+               (progn
+                 (setq cursor next-cursor)
+                 (request))
+             (funcall success-callback
+                      channels groups ims))))
+         (request ()
+                  (slack-request
+                   (slack-request-create
+                    slack-conversations-list-url
+                    team
+                    :params (list (cons "types" (mapconcat #'identity types ","))
+                                  (and cursor (cons "cursor" cursor)))
+                    :success #'on-success))))
+      (request))))
 
 (provide 'slack-conversations)
 ;;; slack-conversations.el ends here
