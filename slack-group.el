@@ -29,11 +29,12 @@
 (require 'slack-util)
 (require 'slack-buffer)
 (require 'slack-request)
+(require 'slack-team)
+(require 'slack-conversations)
 
 (defconst slack-group-history-url "https://slack.com/api/groups.history")
 (defconst slack--group-open-url "https://slack.com/api/groups.open")
 (defconst slack-group-buffer-name "*Slack - Private Group*")
-(defconst slack-group-list-url "https://slack.com/api/groups.list")
 (defconst slack-group-update-mark-url "https://slack.com/api/groups.mark")
 (defconst slack-create-group-url "https://slack.com/api/groups.create")
 (defconst slack-group-rename-url "https://slack.com/api/groups.rename")
@@ -95,24 +96,19 @@
   (interactive)
   (let ((team (or team (slack-team-select))))
     (cl-labels ((on-list-update
-                 (&key data &allow-other-keys)
-                 (slack-request-handle-error
-                  (data "slack-group-list-update")
-                  (slack-merge-list (oref team groups)
-                                    (mapcar #'(lambda (g)
-                                                (slack-room-create
-                                                 g team 'slack-group))
-                                            (plist-get data :groups)))
-                  (if after-success
-                      (funcall after-success team))
-                  (mapc #'(lambda (room)
-                            (slack-room-info-request room team))
-                        (oref team groups))
-                  (slack-log "Slack Group List Updated" team :level 'info))))
-      (slack-room-list-update slack-group-list-url
-                              #'on-list-update
-                              team
-                              :sync nil))))
+                 (_channels groups _ims)
+                 (slack-merge-list (oref team groups) groups)
+                 (when (functionp after-success)
+                   (funcall after-success team))
+                 (mapc #'(lambda (room)
+                           (slack-room-info-request room team))
+                       (oref team groups))
+                 (slack-log "Slack Group List Updated"
+                            team
+                            :level 'info)))
+      (slack-conversations-list team
+                                #'on-list-update
+                                (list "private_channel" "mpim")))))
 
 
 (defmethod slack-room-update-mark-url ((_room slack-group))

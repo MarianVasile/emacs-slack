@@ -28,6 +28,7 @@
 (require 'slack-request)
 (require 'slack-room)
 
+(defconst slack-user-list-url "https://slack.com/api/users.list")
 (defconst slack-dnd-team-info-url "https://slack.com/api/dnd.teamInfo")
 (defconst slack-dnd-end-dnd-url "https://slack.com/api/dnd.endDnd")
 (defconst slack-dnd-set-snooze-url "https://slack.com/api/dnd.setSnooze")
@@ -393,6 +394,23 @@
       slack-dnd-team-info-url
       team
       :success #'on-success))))
+
+(defun slack-user-list-update (&optional team after-success)
+  (interactive)
+  (let ((team (or team (slack-team-select))))
+    (cl-labels
+        ((on-list-update
+          (&key data &allow-other-keys)
+          (slack-request-handle-error
+           (data "slack-im-list-update")
+           (oset team users (plist-get data :members))
+           (slack-request-dnd-team-info team))))
+      (slack-request
+       (slack-request-create
+        slack-user-list-url
+        team
+        :success #'on-list-update)))))
+
 
 (provide 'slack-user)
 ;;; slack-user.el ends here

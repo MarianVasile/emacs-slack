@@ -124,13 +124,6 @@
                  rooms team #'(lambda (rs) (cl-remove-if #'slack-room-hidden-p rs)))))
     (slack-select-from-list (alist "Select Channel: "))))
 
-(cl-defun slack-room-list-update (url success team &key (sync t))
-  (slack-request
-   (slack-request-create
-    url
-    team
-    :success success)))
-
 (defun slack-room-find-message (room ts)
   (cl-find-if #'(lambda (m) (string= ts (slack-ts m)))
               (oref room messages)

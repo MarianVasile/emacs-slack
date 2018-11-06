@@ -179,6 +179,7 @@ When `never', never display typing indicator."
                    (slack-channel-list-update team)
                    (slack-group-list-update team)
                    (slack-im-list-update team)
+                   (slack-user-list-update team)
                    (slack-bot-list-update team)
                    (slack-request-emoji team)
                    (slack-command-list-update team)
