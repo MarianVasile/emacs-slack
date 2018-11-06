@@ -359,7 +359,8 @@
                                                 replace
                                                 old-message)
           (slack-room-update-buffer room team message replace)
-          (slack-room-inc-unread-count room))
+          (unless replace
+            (slack-room-inc-unread-count room)))
 
         (unless no-notify
           (slack-message-notify message room team))
