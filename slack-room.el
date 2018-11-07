@@ -34,6 +34,11 @@
 (defvar slack-buffer-function)
 (defconst slack-room-pins-list-url "https://slack.com/api/pins.list")
 
+(defface slack-room-label-unread-face
+  '((t (:weight bold)))
+  "Face used to room lable contains unread messages"
+  :group 'slack)
+
 (defclass slack-room ()
   ((name :initarg :name :type (or null string) :initform nil)
    (id :initarg :id)
@@ -157,19 +162,18 @@
 (defmethod slack-room-label-prefix ((_room slack-room) _team)
   "  ")
 
-(defmethod slack-room-unread-count-str ((room slack-room))
-  (with-slots (unread-count-display) room
-    (if (< 0 unread-count-display)
-        (concat " ("
-                (number-to-string unread-count-display)
-                ")")
-      "")))
+(defmethod slack-room-has-unread-message-p ((this slack-room))
+  (with-slots (last-read latest) this
+    (when latest
+      (string> (slack-ts latest) last-read))))
 
 (defmethod slack-room-label ((room slack-room) team)
-  (format "%s%s%s"
-          (slack-room-label-prefix room team)
-          (slack-room-display-name room team)
-          (slack-room-unread-count-str room)))
+  (let ((label (format "%s%s"
+                       (slack-room-label-prefix room team)
+                       (slack-room-display-name room team))))
+    (if (slack-room-has-unread-message-p room)
+        (propertize label 'face 'slack-room-label-unread-face)
+      label)))
 
 (defmethod slack-room-name ((room slack-room) _team)
   (oref room name))
