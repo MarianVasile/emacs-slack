@@ -264,15 +264,6 @@
 (defmethod slack-mpim-p ((room slack-group))
   (oref room is-mpim))
 
-(defmethod slack-room-get-info-url ((_room slack-group))
-  slack-group-info-url)
-
-(defmethod slack-room-update-info ((room slack-group) data team)
-  (let ((new-room (slack-room-create (plist-get data :group)
-                                     team
-                                     'slack-group)))
-    (slack-merge room new-room)))
-
 (defmethod slack-room-history-url ((_room slack-group))
   slack-group-history-url)
 

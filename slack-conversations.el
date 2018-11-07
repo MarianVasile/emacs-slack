@@ -46,6 +46,8 @@
   "https://slack.com/api/conversations.kick")
 (defconst slack-conversations-list-url
   "https://slack.com/api/conversations.list")
+(defconst slack-conversations-info-url
+  "https://slack.com/api/conversations.info")
 
 (cl-defun slack-conversations-success-handler (team &key on-errors on-success)
   (cl-function
@@ -323,6 +325,26 @@
                                   (and cursor (cons "cursor" cursor)))
                     :success #'on-success))))
       (request))))
+
+(defun slack-conversations-info (room team)
+  (slack-request
+   (slack-conversations-create-info-request
+    room team)))
+
+(defun slack-conversations-create-info-request (room team)
+  (cl-labels
+      ((on-success (&key data &allow-other-keys)
+                   (slack-request-handle-error
+                    (data "slack-conversations-info")
+                    (let ((new-room (slack-room-create (plist-get data :channel)
+                                                       team
+                                                       (eieio-object-class room))))
+                      (slack-merge room new-room)))))
+    (slack-request-create
+     slack-conversations-info-url
+     team
+     :params (list (cons "channel" (oref room id)))
+     :success #'on-success)))
 
 (provide 'slack-conversations)
 ;;; slack-conversations.el ends here

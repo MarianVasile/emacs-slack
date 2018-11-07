@@ -90,7 +90,8 @@
                    (funcall after-success team))
                  (mapc #'(lambda (room)
                            (slack-request-worker-push
-                            (slack-room-create-info-request room team)))
+                            (slack-conversations-create-info-request
+                             room team)))
                        (oref team channels))
                  (slack-log "Slack Channel List Updated"
                             team
@@ -244,16 +245,6 @@
     (let ((name (slack-room-name room team)))
       (and name
            (memq (intern name) subscribed-channels)))))
-
-(defmethod slack-room-get-info-url ((_room slack-channel))
-  slack-channel-info-url)
-
-(defmethod slack-room-update-info ((room slack-channel) data team)
-  (let ((new-room (slack-room-create (plist-get data :channel)
-                                     team
-                                     'slack-channel)))
-
-    (slack-merge room new-room)))
 
 (defmethod slack-room-history-url ((_room slack-channel))
   slack-channel-history-url)

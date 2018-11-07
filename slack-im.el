@@ -193,20 +193,6 @@
            (slack-im-user-dnd-status room team)
            (slack-im-user-presence room team))))
 
-(defmethod slack-room-get-info-url ((_room slack-im))
-  slack-im-open-url)
-
-(defmethod slack-room-update-info ((room slack-im) data team)
-  (let ((new-room (slack-room-create (plist-get data :channel)
-                                     team
-                                     'slack-im)))
-
-    (slack-merge room new-room)))
-
-(defmethod slack-room-info-request-params ((room slack-im))
-  (list (cons "user" (oref room user))
-        (cons "return_im" "true")))
-
 (defmethod slack-room-get-members ((room slack-im))
   (list (oref room user)))
 
