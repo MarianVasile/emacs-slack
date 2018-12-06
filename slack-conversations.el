@@ -52,6 +52,8 @@
   "https://slack.com/api/conversations.list")
 (defconst slack-conversations-replies-url
   "https://slack.com/api/conversations.replies")
+(defconst slack-conversations-view-url
+  "https://slack.com/api/conversations.view")
 
 (cl-defun slack-conversations-success-handler (team &key on-errors on-success)
   (cl-function
@@ -366,6 +368,27 @@
                       (if cursor (cons "cursor" cursor)
                         (cons "oldest" oldest)))
         :success #'on-success)))))
+
+(defun slack-conversations-view (team)
+  (cl-labels
+      ((success (&key data &allow-other-keys)
+                (slack-request-handle-error
+                 (data "slack-conversations-view")
+                 (let ((bots (plist-get data :bots))
+                       (users (plist-get data :users))
+                       (channels (plist-get data :channels))
+                       )
+                   (message "BOTS: %S, USERS: %S, CHANNELS: %S"
+                            (length bots)
+                            (length users)
+                            (length channels))))))
+    (slack-request
+     (slack-request-create
+      slack-conversations-view-url
+      team
+      :params (list (cons "include_full_users" "true")
+                    (cons "no_members" "true"))
+      :success #'success))))
 
 (provide 'slack-conversations)
 ;;; slack-conversations.el ends here
